@@ -21,6 +21,7 @@ namespace AgentIsland
         private TextBlock compactDelayValue;
         private Slider compactTitleSlider;
         private TextBlock compactTitleValue;
+        private CheckBox trayNotificationsBox;
         private bool loading;
 
         public SettingsWindow(AppSettings settings)
@@ -86,6 +87,21 @@ namespace AgentIsland
             keepCompletedBox.Checked += delegate { SaveFromUi(); };
             keepCompletedBox.Unchecked += delegate { SaveFromUi(); };
             stack.Children.Add(keepCompletedBox);
+
+            stack.Children.Add(Label("通知"));
+            trayNotificationsBox = Check("等待 / 出错时弹系统通知");
+            trayNotificationsBox.Margin = new Thickness(0, 7, 0, 4);
+            trayNotificationsBox.Checked += delegate { SaveFromUi(); };
+            trayNotificationsBox.Unchecked += delegate { SaveFromUi(); };
+            stack.Children.Add(trayNotificationsBox);
+
+            var trayHint = new TextBlock();
+            trayHint.Text = "权限请求、空闲提醒等需要确认的状态会触发 Windows 托盘气泡";
+            trayHint.Foreground = new SolidColorBrush(Color.FromRgb(112, 126, 148));
+            trayHint.FontSize = 11;
+            trayHint.TextWrapping = TextWrapping.Wrap;
+            trayHint.Margin = new Thickness(0, 0, 0, 18);
+            stack.Children.Add(trayHint);
 
             stack.Children.Add(Label("悬浮窗"));
             compactModeBox = Check("自动收缩成小胶囊");
@@ -174,6 +190,7 @@ namespace AgentIsland
             fastProbeBox.IsChecked = settings.FastStatusProbeEnabled;
             multiCountBox.IsChecked = settings.ShowMultiConversationCount;
             keepCompletedBox.IsChecked = settings.KeepCompletedConversations;
+            trayNotificationsBox.IsChecked = settings.TrayNotificationsEnabled;
             compactModeBox.IsChecked = settings.CompactModeEnabled;
             compactDelaySlider.Value = settings.CompactDelaySeconds;
             compactDelayValue.Text = settings.CompactDelaySeconds + " 秒";
@@ -201,6 +218,7 @@ namespace AgentIsland
             settings.FastStatusProbeEnabled = fastProbeBox.IsChecked == true;
             settings.ShowMultiConversationCount = multiCountBox.IsChecked == true;
             settings.KeepCompletedConversations = keepCompletedBox.IsChecked == true;
+            settings.TrayNotificationsEnabled = trayNotificationsBox.IsChecked == true;
             settings.CompactModeEnabled = compactModeBox.IsChecked == true;
             settings.CompactDelaySeconds = (int)compactDelaySlider.Value;
             settings.CompactTitleChars = (int)compactTitleSlider.Value;

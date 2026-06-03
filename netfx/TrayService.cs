@@ -45,6 +45,11 @@ namespace AgentIsland
                 return;
             }
 
+            if (!settings.TrayNotificationsEnabled)
+            {
+                return;
+            }
+
             var key = (snapshot.SessionKey ?? string.Empty) + "|" + snapshot.Mode + "|" + snapshot.Title + "|" + snapshot.Detail;
             var now = DateTime.UtcNow;
             if (string.Equals(lastAttentionKey, key, StringComparison.Ordinal) &&

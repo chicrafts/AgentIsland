@@ -20,6 +20,7 @@ namespace AgentIsland
         public bool CompactModeEnabled { get; set; }
         public int CompactDelaySeconds { get; set; }
         public int CompactTitleChars { get; set; }
+        public bool TrayNotificationsEnabled { get; set; }
 
         public static string SettingsPath
         {
@@ -63,6 +64,7 @@ namespace AgentIsland
             settings.CompactModeEnabled = ReadBool(values, "compactMode", settings.CompactModeEnabled);
             settings.CompactDelaySeconds = Clamp(ReadInt(values, "compactDelaySeconds", settings.CompactDelaySeconds), 1, 12);
             settings.CompactTitleChars = Clamp(ReadInt(values, "compactTitleChars", settings.CompactTitleChars), 3, 8);
+            settings.TrayNotificationsEnabled = ReadBool(values, "trayNotifications", settings.TrayNotificationsEnabled);
             return settings;
         }
 
@@ -79,7 +81,8 @@ namespace AgentIsland
                 FastStatusProbeEnabled = true,
                 CompactModeEnabled = true,
                 CompactDelaySeconds = 3,
-                CompactTitleChars = 6
+                CompactTitleChars = 6,
+                TrayNotificationsEnabled = true
             };
         }
 
@@ -103,6 +106,7 @@ namespace AgentIsland
             builder.AppendLine("compactMode=" + CompactModeEnabled.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
             builder.AppendLine("compactDelaySeconds=" + CompactDelaySeconds.ToString(CultureInfo.InvariantCulture));
             builder.AppendLine("compactTitleChars=" + CompactTitleChars.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("trayNotifications=" + TrayNotificationsEnabled.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
             File.WriteAllText(SettingsPath, builder.ToString(), new UTF8Encoding(false));
 
             if (notify && Changed != null)
@@ -124,6 +128,7 @@ namespace AgentIsland
             CompactModeEnabled = defaults.CompactModeEnabled;
             CompactDelaySeconds = defaults.CompactDelaySeconds;
             CompactTitleChars = defaults.CompactTitleChars;
+            TrayNotificationsEnabled = defaults.TrayNotificationsEnabled;
             Save();
         }
 
