@@ -1,0 +1,28 @@
+# Build output
+dist/
+publish/
+bin/
+obj/
+*.exe
+*.pdb
+*.dll
+*.cab
+*.sed
+
+# IDE / editor / local
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.swp
+*~
+
+# Claude Code per-machine settings
+.claude/settings.local.json
+
+# OS
+Thumbs.db
+ehthumbs.db
+.DS_Store
+desktop.ini
