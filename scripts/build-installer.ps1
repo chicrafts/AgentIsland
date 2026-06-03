@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $repo = Split-Path -Parent $PSScriptRoot
-$root = Split-Path -Parent $repo
+$root = $repo
 $publish = Join-Path $root "dist\publish"
 $installer = Join-Path $root "dist\AgentIslandSetup.exe"
 $sed = Join-Path $root "dist\agent-island.sed"
