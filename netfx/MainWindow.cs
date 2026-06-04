@@ -65,6 +65,7 @@ namespace AgentIsland
         private bool flowBusy;
         private Action<string> conversationClearHandler;
         private readonly List<RowBlink> rowBlinks = new List<RowBlink>();
+        private readonly HashSet<string> previousRowKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         private sealed class RowBlink
         {
@@ -645,7 +646,11 @@ namespace AgentIsland
             }
             else if (conversationListExpanded)
             {
-                Height = CalculateConversationWindowHeight();
+                var targetHeight = CalculateConversationWindowHeight();
+                if (Math.Abs((ActualHeight > 0 ? ActualHeight : Height) - targetHeight) > 0.5)
+                {
+                    AnimateWindowHeight(targetHeight, 220, null);
+                }
             }
         }
 
@@ -760,6 +765,7 @@ namespace AgentIsland
             conversationListStack.Children.Clear();
             rowBlinks.Clear();
             var conversations = snapshot.Conversations ?? new StatusSnapshot[0];
+            var nextKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var shown = 0;
             for (var i = 0; i < conversations.Length; i++)
             {
@@ -773,9 +779,14 @@ namespace AgentIsland
                     break;
                 }
 
-                var row = BuildConversationRow(conversations[i], shown);
+                var conv = conversations[i];
+                var key = string.IsNullOrWhiteSpace(conv.SessionKey) ? string.Empty : conv.SessionKey;
+                var isNew = !previousRowKeys.Contains(key);
+                nextKeys.Add(key);
+
+                var row = BuildConversationRow(conv, shown);
                 conversationListStack.Children.Add(row);
-                if (conversationListExpanded)
+                if (conversationListExpanded && isNew)
                 {
                     AnimateListItemIn(row, shown);
                 }
@@ -786,14 +797,20 @@ namespace AgentIsland
             {
                 var overflow = BuildOverflowRow(conversations.Length - shown - 1);
                 conversationListStack.Children.Add(overflow);
-                if (conversationListExpanded)
+                if (conversationListExpanded && !previousRowKeys.Contains("__overflow__"))
                 {
                     AnimateListItemIn(overflow, shown);
                 }
+                nextKeys.Add("__overflow__");
             }
 
             if (conversationListExpanded)
             {
+                previousRowKeys.Clear();
+                foreach (var k in nextKeys)
+                {
+                    previousRowKeys.Add(k);
+                }
                 StartRowBlinks();
             }
         }
@@ -918,28 +935,45 @@ namespace AgentIsland
             closeButton.ToolTip = "清除这个会话";
             closeButton.VerticalAlignment = VerticalAlignment.Center;
 
-            var closeText = new TextBlock();
-            closeText.Text = "×";
-            closeText.HorizontalAlignment = HorizontalAlignment.Center;
-            closeText.VerticalAlignment = VerticalAlignment.Center;
-            closeText.FontFamily = new FontFamily("Segoe UI Symbol");
-            closeText.FontSize = 12;
-            closeText.FontWeight = FontWeights.Bold;
-            closeText.Foreground = new SolidColorBrush(Color.FromRgb(174, 184, 202));
-            closeButton.Child = closeText;
+            var closeIconBrush = new SolidColorBrush(Color.FromRgb(196, 206, 222));
+            var closeIcon = new Grid();
+            closeIcon.Width = 9;
+            closeIcon.Height = 9;
+            closeIcon.HorizontalAlignment = HorizontalAlignment.Center;
+            closeIcon.VerticalAlignment = VerticalAlignment.Center;
+            closeIcon.SnapsToDevicePixels = true;
+            var closeLine1 = new System.Windows.Shapes.Line
+            {
+                X1 = 0.5, Y1 = 0.5, X2 = 8.5, Y2 = 8.5,
+                Stroke = closeIconBrush,
+                StrokeThickness = 1.6,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round
+            };
+            var closeLine2 = new System.Windows.Shapes.Line
+            {
+                X1 = 8.5, Y1 = 0.5, X2 = 0.5, Y2 = 8.5,
+                Stroke = closeIconBrush,
+                StrokeThickness = 1.6,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round
+            };
+            closeIcon.Children.Add(closeLine1);
+            closeIcon.Children.Add(closeLine2);
+            closeButton.Child = closeIcon;
             rightPanel.Children.Add(closeButton);
 
             closeButton.MouseEnter += delegate
             {
                 AnimateColor(closeFill, Color.FromArgb(74, 248, 113, 113));
                 AnimateColor(closeStroke, Color.FromArgb(86, 248, 113, 113));
-                AnimateColor((SolidColorBrush)closeText.Foreground, Color.FromRgb(255, 238, 240));
+                AnimateColor(closeIconBrush, Color.FromRgb(255, 238, 240));
             };
             closeButton.MouseLeave += delegate
             {
                 AnimateColor(closeFill, Color.FromArgb(20, 255, 255, 255));
                 AnimateColor(closeStroke, Color.FromArgb(34, 255, 255, 255));
-                AnimateColor((SolidColorBrush)closeText.Foreground, Color.FromRgb(174, 184, 202));
+                AnimateColor(closeIconBrush, Color.FromRgb(196, 206, 222));
             };
             closeButton.MouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
             {
@@ -1220,6 +1254,7 @@ namespace AgentIsland
             outsideClickTimer.Stop();
             leftButtonWasDown = false;
             StopRowBlinks();
+            previousRowKeys.Clear();
             AnimateElementOpacity(conversationListScroller, 0.0, 140, delegate
             {
                 if (!conversationListExpanded && conversationListScroller != null)
