@@ -78,7 +78,7 @@ namespace AgentIsland
             {
                 if (lowerNotification == "idle_prompt")
                 {
-                    return Snapshot(IslandMode.Waiting, agent, "等待回复", FirstNonEmpty(message, "Agent 已停下来，等你的下一句"), tool, ts);
+                    return Snapshot(IslandMode.Done, agent, "已完成", FirstNonEmpty(message, "Agent 已停下，等你下一句"), tool, ts);
                 }
 
                 if (lowerNotification == "auth_success")

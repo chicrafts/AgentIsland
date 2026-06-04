@@ -125,7 +125,7 @@ Codex 还有快速探测通道：
 | `Thinking` | 思考中 / 检索中 / 处理结果 | `UserPromptSubmit`、`Pre/PostToolUse`（非 edit/cmd） |
 | `Editing` | 修改中 | `PreToolUse` 且工具像编辑（`edit`/`write`/`apply_patch` 等） |
 | `Running` | 执行中 | `PreToolUse` 且工具像命令（`bash`/`shell` 等） |
-| `Waiting` | 等你确认 / 等待回复 / 等待填写 / 需要注意 | `PermissionRequest`、`Notification(idle_prompt)`、`Elicitation` 等 |
+| `Waiting` | 等你确认 / 等待填写 / 需要注意 | `PermissionRequest`、`Elicitation`、其它需要用户响应的 Notification |
 | `Done` | 已完成 | `Stop`、`SessionEnd`、`turn_completed` |
 | `Error` | 出错了 / 已拒绝 | `PermissionDenied`、`*Failure`、`*Error` |
 | `Compacting` | 整理上下文 | `PreCompact` |
@@ -139,7 +139,8 @@ Codex 还有快速探测通道：
 
 `Done` 也有保护：
 
-- 已是 `Done` 的会话收到尾延迟事件（迟到的 `PostToolUse`、`Notification idle_prompt`、`SubagentStop` 等）时，45 秒内不会回退到 `Thinking` 或 `Waiting`。这避免 Claude Code 在 `Stop` 后立刻发的 idle_prompt 把"已完成"翻成"等待回复"。
+- 已是 `Done` 的会话收到尾延迟工具事件（迟到的 `PostToolUse`、`SubagentStop`、`TaskCompleted` 等）时，45 秒内不会回退到 `Thinking`。这避免乱序到达的工具事件把"已完成"翻成"处理结果"。
+- Claude Code 的 `Notification(idle_prompt)` 直接映射为 `Done`（"已完成"），因为官方语义是"agent 已经闲了一会儿，等你下一句"，本质就是回合完成后的提醒，不是等待用户授权。
 
 ## Hook 事件清单
 
@@ -163,7 +164,7 @@ Claude Code hooks：
 关键映射：
 
 - `PermissionRequest` 或 `notification_type=permission_prompt` → "等你确认"
-- `Notification` 且 `notification_type=idle_prompt` → "等待回复"
+- `Notification` 且 `notification_type=idle_prompt` → "已完成"（Claude 已停下，等你下一句）
 - `Elicitation` 或 `notification_type=elicitation_dialog` → "等待填写"
 - `PermissionDenied` → "已拒绝"
 

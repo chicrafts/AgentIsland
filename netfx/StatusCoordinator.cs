@@ -231,8 +231,7 @@ namespace AgentIsland
                 return false;
             }
 
-            return rawEvent.IndexOf("Notification", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   rawEvent.IndexOf("PostToolUse", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            return rawEvent.IndexOf("PostToolUse", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    rawEvent.IndexOf("PostToolBatch", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    rawEvent.IndexOf("SubagentStop", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    rawEvent.IndexOf("TaskCompleted", StringComparison.OrdinalIgnoreCase) >= 0 ||
