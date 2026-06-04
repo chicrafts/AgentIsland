@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -63,6 +64,14 @@ namespace AgentIsland
         private bool flowRunning;
         private bool flowBusy;
         private Action<string> conversationClearHandler;
+        private readonly List<RowBlink> rowBlinks = new List<RowBlink>();
+
+        private sealed class RowBlink
+        {
+            public Ellipse Dot;
+            public ScaleTransform Scale;
+            public bool IsActive;
+        }
 
         public MainWindow(AppSettings settings)
         {
@@ -749,6 +758,7 @@ namespace AgentIsland
             }
 
             conversationListStack.Children.Clear();
+            rowBlinks.Clear();
             var conversations = snapshot.Conversations ?? new StatusSnapshot[0];
             var shown = 0;
             for (var i = 0; i < conversations.Length; i++)
@@ -780,6 +790,11 @@ namespace AgentIsland
                 {
                     AnimateListItemIn(overflow, shown);
                 }
+            }
+
+            if (conversationListExpanded)
+            {
+                StartRowBlinks();
             }
         }
 
@@ -835,6 +850,10 @@ namespace AgentIsland
             dot.Fill = new SolidColorBrush(accent);
             dot.VerticalAlignment = VerticalAlignment.Center;
             dot.Effect = new DropShadowEffect { Color = accent, BlurRadius = 8, ShadowDepth = 0, Opacity = 0.58, RenderingBias = RenderingBias.Performance };
+            var dotScale = new ScaleTransform(1, 1);
+            dot.RenderTransformOrigin = new Point(0.5, 0.5);
+            dot.RenderTransform = dotScale;
+            rowBlinks.Add(new RowBlink { Dot = dot, Scale = dotScale, IsActive = IsActiveListMode(item.Mode) });
             grid.Children.Add(dot);
 
             var agentBadge = BuildConversationAgentBadge(item.Agent, accent);
@@ -1194,11 +1213,13 @@ namespace AgentIsland
                 AnimateWindowHeight(CalculateConversationWindowHeight(), 260, null);
                 AnimateElementOpacity(conversationListScroller, 1.0, 190);
                 AnimateTranslateY(conversationListTranslate, 0, 260);
+                StartRowBlinks();
                 return;
             }
 
             outsideClickTimer.Stop();
             leftButtonWasDown = false;
+            StopRowBlinks();
             AnimateElementOpacity(conversationListScroller, 0.0, 140, delegate
             {
                 if (!conversationListExpanded && conversationListScroller != null)
@@ -1341,6 +1362,77 @@ namespace AgentIsland
                 animation.Completed += completed;
             }
             element.BeginAnimation(OpacityProperty, animation, HandoffBehavior.SnapshotAndReplace);
+        }
+
+        private static bool IsActiveListMode(IslandMode mode)
+        {
+            return mode == IslandMode.Thinking ||
+                   mode == IslandMode.Editing ||
+                   mode == IslandMode.Running ||
+                   mode == IslandMode.Waiting ||
+                   mode == IslandMode.Compacting;
+        }
+
+        private void StartRowBlinks()
+        {
+            for (var i = 0; i < rowBlinks.Count; i++)
+            {
+                var blink = rowBlinks[i];
+                if (blink.IsActive)
+                {
+                    StartRowBlinkAnimation(blink);
+                }
+                else
+                {
+                    StopRowBlinkAnimation(blink);
+                }
+            }
+        }
+
+        private void StopRowBlinks()
+        {
+            for (var i = 0; i < rowBlinks.Count; i++)
+            {
+                StopRowBlinkAnimation(rowBlinks[i]);
+            }
+        }
+
+        private static void StartRowBlinkAnimation(RowBlink blink)
+        {
+            if (blink == null || blink.Dot == null || blink.Scale == null)
+            {
+                return;
+            }
+
+            var opacity = new DoubleAnimation(0.45, 1.0, TimeSpan.FromMilliseconds(880));
+            opacity.AutoReverse = true;
+            opacity.RepeatBehavior = RepeatBehavior.Forever;
+            opacity.EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut };
+            opacity.SetValue(Timeline.DesiredFrameRateProperty, 60);
+            blink.Dot.BeginAnimation(OpacityProperty, opacity, HandoffBehavior.SnapshotAndReplace);
+
+            var scale = new DoubleAnimation(0.82, 1.22, TimeSpan.FromMilliseconds(880));
+            scale.AutoReverse = true;
+            scale.RepeatBehavior = RepeatBehavior.Forever;
+            scale.EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut };
+            scale.SetValue(Timeline.DesiredFrameRateProperty, 60);
+            blink.Scale.BeginAnimation(ScaleTransform.ScaleXProperty, scale, HandoffBehavior.SnapshotAndReplace);
+            blink.Scale.BeginAnimation(ScaleTransform.ScaleYProperty, scale, HandoffBehavior.SnapshotAndReplace);
+        }
+
+        private static void StopRowBlinkAnimation(RowBlink blink)
+        {
+            if (blink == null || blink.Dot == null || blink.Scale == null)
+            {
+                return;
+            }
+
+            blink.Dot.BeginAnimation(OpacityProperty, null);
+            blink.Dot.Opacity = 1;
+            blink.Scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            blink.Scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            blink.Scale.ScaleX = 1;
+            blink.Scale.ScaleY = 1;
         }
 
         private static void AnimateTranslateY(TranslateTransform transform, double target, int milliseconds)

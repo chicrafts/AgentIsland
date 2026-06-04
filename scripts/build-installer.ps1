@@ -133,7 +133,7 @@ try {
   Pop-Location
 }
 
-$deadline = (Get-Date).AddSeconds(10)
+$deadline = (Get-Date).AddSeconds(30)
 while (!(Test-Path $installer) -and (Get-Date) -lt $deadline) {
   Start-Sleep -Milliseconds 200
 }
