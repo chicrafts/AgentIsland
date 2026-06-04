@@ -1438,6 +1438,7 @@ namespace AgentIsland
                 islandBorder.ReleaseMouseCapture();
             }
 
+            var restore = SuppressVisualsForDrag();
             try
             {
                 DragMove();
@@ -1445,7 +1446,50 @@ namespace AgentIsland
             catch
             {
             }
+            finally
+            {
+                restore();
+            }
             e.Handled = true;
+        }
+
+        private Action SuppressVisualsForDrag()
+        {
+            Effect savedEffect = null;
+            CacheMode savedCacheMode = null;
+            if (islandBorder != null)
+            {
+                savedEffect = islandBorder.Effect;
+                savedCacheMode = islandBorder.CacheMode;
+                islandBorder.Effect = null;
+                islandBorder.CacheMode = new BitmapCache { SnapsToDevicePixels = true };
+            }
+
+            var pulseAVis = pulseRing != null ? pulseRing.Visibility : Visibility.Visible;
+            var pulseBVis = pulseRingB != null ? pulseRingB.Visibility : Visibility.Visible;
+            var flowVis = flowTrack != null ? flowTrack.Visibility : Visibility.Visible;
+            var stackAVis = stackCardA != null ? stackCardA.Visibility : Visibility.Visible;
+            var stackBVis = stackCardB != null ? stackCardB.Visibility : Visibility.Visible;
+
+            if (pulseRing != null) pulseRing.Visibility = Visibility.Hidden;
+            if (pulseRingB != null) pulseRingB.Visibility = Visibility.Hidden;
+            if (flowTrack != null) flowTrack.Visibility = Visibility.Hidden;
+            if (stackCardA != null) stackCardA.Visibility = Visibility.Hidden;
+            if (stackCardB != null) stackCardB.Visibility = Visibility.Hidden;
+
+            return delegate
+            {
+                if (islandBorder != null)
+                {
+                    islandBorder.CacheMode = savedCacheMode;
+                    islandBorder.Effect = savedEffect;
+                }
+                if (pulseRing != null) pulseRing.Visibility = pulseAVis;
+                if (pulseRingB != null) pulseRingB.Visibility = pulseBVis;
+                if (flowTrack != null) flowTrack.Visibility = flowVis;
+                if (stackCardA != null) stackCardA.Visibility = stackAVis;
+                if (stackCardB != null) stackCardB.Visibility = stackBVis;
+            };
         }
 
         private void OnIslandMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
